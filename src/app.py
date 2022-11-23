@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User
+from models import db, User, Tweet
 #from models import Person
 
 app = Flask(__name__)
@@ -40,10 +40,51 @@ def sitemap():
 def handle_hello():
 
     response_body = {
-        "msg": "Hello, this is your GET /user response "
+        "msg": "Hello, this is your GET /user response 😎"
     }
 
     return jsonify(response_body), 200
+
+@app.route('/tweets', methods=['GET'])
+def get_tweets():
+    all_tweets = Tweet.query.all()
+    return jsonify(
+            [ tweet.serialize() for tweet in all_tweets ]
+        ) , 200
+
+
+@app.route('/tweets', methods=['POST'])
+def post_tweet():
+    body = request.json
+    if "content" not in body:
+        return "Ese tuit no tiene contenido! ⛔", 400
+    else:
+        new_tweet = Tweet(body["content"])
+        db.session.add(new_tweet) #Memoria RAM
+        try:
+            db.session.commit() #Guarda en datos solidos!
+            return "Tuit creado con exito! 🦄", 201
+        except Exception as err:
+            return "Ocurrio un error en el servidor 🐬", 500
+
+        return jsonify(new_tweet.serialize()), 201
+    return "Error algo ah ocurrido! 🐋", 404
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
