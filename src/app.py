@@ -36,14 +36,19 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
-@app.route('/user', methods=['GET'])
+@app.route('/user', methods=['GET','POST'])
 def handle_hello():
 
-    response_body = {
-        "msg": "Hello, this is your GET /user response 😎"
-    }
+    if request.method == 'GET':
+        response_body = {
+            "msg": "Hello, this is your GET /user response 😎"
+        }
+        return jsonify(response_body), 200
+    else:
+        body = request.json
+        
 
-    return jsonify(response_body), 200
+        return "Method not implemented yet!",500
 
 @app.route('/tweets', methods=['GET'])
 def get_tweets():
@@ -58,16 +63,21 @@ def post_tweet():
     body = request.json
     if "content" not in body:
         return "Ese tuit no tiene contenido! ⛔", 400
+    if "email" not in body:
+        return "Aqui no se permite el anonimato! ✝", 400
     else:
-        new_tweet = Tweet(body["content"])
-        db.session.add(new_tweet) #Memoria RAM
-        try:
-            db.session.commit() #Guarda en datos solidos!
-            return "Tuit creado con exito! 🦄", 201
-        except Exception as err:
-            return "Ocurrio un error en el servidor 🐬", 500
-
-        return jsonify(new_tweet.serialize()), 201
+        author = User.query.filter_by(email=body["email"]).one_or_none()
+        if author == None:
+            return "Ese usuario no existe en tuiter.", 404
+        else:
+            new_tweet = Tweet(body["content"], author)
+            db.session.add(new_tweet) #Memoria RAM
+            try:
+                db.session.commit() #Guarda en datos solidos!
+                return "Tuit creado con exito! 🦄", 201
+            except Exception as err:
+                return "Ocurrio un error en el servidor 🐬", 500
+        #return jsonify(new_tweet.serialize()), 201
     return "Error algo ah ocurrido! 🐋", 404
 
 
